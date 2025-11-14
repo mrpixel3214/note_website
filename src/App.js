@@ -288,17 +288,17 @@ export default function ObsidianClone() {
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',
-        padding: '32px'
+        padding: '24px'
       }}>
         <div style={{
-          maxWidth: '28rem',
           width: '100%',
+          maxWidth: '400px',
           background: '#1a1a1a',
           borderRadius: '8px',
           border: '1px solid #2a2a2a',
-          padding: '24px'
+          padding: '32px'
         }}>
-          <h2 style={{ fontSize: '18px', fontWeight: '500', marginBottom: '24px', color: '#e5e7eb' }}>GitHub Settings</h2>
+          <h2 style={{ fontSize: '18px', fontWeight: '500', marginBottom: '24px', color: '#e5e7eb', textAlign: 'center' }}>GitHub Settings</h2>
           
           <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
             <div>
@@ -312,10 +312,11 @@ export default function ObsidianClone() {
                   background: '#0d0d0d',
                   border: '1px solid #2a2a2a',
                   borderRadius: '4px',
-                  padding: '8px 12px',
+                  padding: '10px 12px',
                   fontSize: '14px',
                   color: '#d1d5db',
-                  outline: 'none'
+                  outline: 'none',
+                  boxSizing: 'border-box'
                 }}
                 placeholder="your-username"
               />
@@ -332,10 +333,11 @@ export default function ObsidianClone() {
                   background: '#0d0d0d',
                   border: '1px solid #2a2a2a',
                   borderRadius: '4px',
-                  padding: '8px 12px',
+                  padding: '10px 12px',
                   fontSize: '14px',
                   color: '#d1d5db',
-                  outline: 'none'
+                  outline: 'none',
+                  boxSizing: 'border-box'
                 }}
                 placeholder="my-notes"
               />
@@ -352,26 +354,27 @@ export default function ObsidianClone() {
                   background: '#0d0d0d',
                   border: '1px solid #2a2a2a',
                   borderRadius: '4px',
-                  padding: '8px 12px',
+                  padding: '10px 12px',
                   fontSize: '14px',
                   color: '#d1d5db',
-                  outline: 'none'
+                  outline: 'none',
+                  boxSizing: 'border-box'
                 }}
                 placeholder="ghp_xxxxxxxxxxxx"
               />
-              <p style={{ fontSize: '12px', color: '#6b7280', marginTop: '6px' }}>
+              <p style={{ fontSize: '12px', color: '#6b7280', marginTop: '8px', margin: '8px 0 0' }}>
                 Generate at: GitHub Settings → Developer settings → Tokens (classic) → repo scope
               </p>
             </div>
             
-            <div style={{ display: 'flex', gap: '8px', paddingTop: '8px' }}>
+            <div style={{ display: 'flex', gap: '12px', paddingTop: '8px' }}>
               <button
                 onClick={saveSettings}
                 style={{
                   flex: 1,
                   background: '#7c3aed',
                   color: 'white',
-                  padding: '8px',
+                  padding: '10px',
                   borderRadius: '4px',
                   border: 'none',
                   fontSize: '14px',
@@ -383,7 +386,7 @@ export default function ObsidianClone() {
               <button
                 onClick={() => setShowSettings(false)}
                 style={{
-                  padding: '8px 16px',
+                  padding: '10px 20px',
                   background: '#2a2a2a',
                   color: '#9ca3af',
                   borderRadius: '4px',

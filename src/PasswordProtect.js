@@ -50,41 +50,40 @@ const PasswordProtect = () => {
       justifyContent: 'center',
       height: '100vh',
       background: '#202020',
-      color: '#d1d5db'
+      color: '#d1d5db',
+      padding: '24px'
     }}>
       <div style={{
-        width: '300px',
-        padding: '24px',
+        width: '100%',
+        maxWidth: '320px',
+        padding: '32px',
         background: '#1a1a1a',
         borderRadius: '8px',
         border: '1px solid #2a2a2a'
       }}>
         <h2 style={{ fontSize: '18px', fontWeight: '500', marginBottom: '24px', color: '#e5e7eb', textAlign: 'center' }}>Enter Password</h2>
-        <form onSubmit={handlePasswordSubmit}>
+        <form onSubmit={handlePasswordSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
           <input
             type="password"
             value={password}
             onChange={(e) => setPassword(e.target.value)}
             style={{
-              width: '100%',
               background: '#0d0d0d',
               border: '1px solid #2a2a2a',
               borderRadius: '4px',
-              padding: '8px 12px',
+              padding: '10px 12px',
               fontSize: '14px',
               color: '#d1d5db',
-              outline: 'none',
-              marginBottom: '16px'
+              outline: 'none'
             }}
             placeholder="Password"
           />
           <button
             type="submit"
             style={{
-              width: '100%',
               background: '#7c3aed',
               color: 'white',
-              padding: '8px',
+              padding: '10px',
               borderRadius: '4px',
               border: 'none',
               fontSize: '14px',
@@ -93,7 +92,7 @@ const PasswordProtect = () => {
           >
             Unlock
           </button>
-          {error && <p style={{ color: '#f87171', fontSize: '12px', textAlign: 'center', marginTop: '16px' }}>{error}</p>}
+          {error && <p style={{ color: '#f87171', fontSize: '12px', textAlign: 'center', margin: '8px 0 0' }}>{error}</p>}
         </form>
       </div>
     </div>
