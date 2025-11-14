@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { FileText, Plus, Folder, FolderOpen, ChevronRight, ChevronDown, Search, Menu, Settings, Bold, Italic, List, ListOrdered, CheckSquare, Highlighter, Share2, Eye, Edit } from 'lucide-react';
+import { FileText, Plus, Folder, FolderOpen, ChevronRight, ChevronDown, Search, Menu, Bold, Italic, List, ListOrdered, CheckSquare, Highlighter, Share2, Eye, Edit } from 'lucide-react';
 
 export default function ObsidianClone() {
   const [notes, setNotes] = useState({});
@@ -8,130 +8,81 @@ export default function ObsidianClone() {
   const [title, setTitle] = useState('Untitled');
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
-  const [showSettings, setShowSettings] = useState(false);
   const [expandedFolders, setExpandedFolders] = useState({});
-  const [githubToken, setGithubToken] = useState('');
-  const [githubRepo, setGithubRepo] = useState('');
-  const [githubOwner, setGithubOwner] = useState('');
-  const [isConnected, setIsConnected] = useState(false);
   const [viewMode, setViewMode] = useState('edit');
+  const [error, setError] = useState(null);
   const textareaRef = useRef(null);
 
   useEffect(() => {
-    const token = localStorage.getItem('github_token');
-    const repo = localStorage.getItem('github_repo');
-    const owner = localStorage.getItem('github_owner');
-    
-    if (token && repo && owner) {
-      setGithubToken(token);
-      setGithubRepo(repo);
-      setGithubOwner(owner);
-      setIsConnected(true);
-      loadNotesFromGithub(token, owner, repo);
-    }
+    loadNotes();
   }, []);
 
-  const loadNotesFromGithub = async (token, owner, repo) => {
+  const loadNotes = async () => {
     try {
-      const response = await fetch(`https://api.github.com/repos/${owner}/${repo}/git/trees/main?recursive=1`, {
-        headers: {
-          'Authorization': `token ${token}`,
-          'Accept': 'application/vnd.github.v3+json'
-        }
-      });
-      
-      if (response.ok) {
-        const data = await response.json();
-        const fileTree = {};
-        
-        data.tree.forEach(item => {
-          if (item.type === 'blob' && item.path.endsWith('.md')) {
-            const parts = item.path.split('/');
-            let current = fileTree;
-            
-            for (let i = 0; i < parts.length - 1; i++) {
-              if (!current[parts[i]]) {
-                current[parts[i]] = { type: 'folder', children: {} };
-              }
-              current = current[parts[i]].children;
-            }
-            
-            const fileName = parts[parts.length - 1].replace('.md', '');
-            current[fileName] = { type: 'file', path: item.path, sha: item.sha };
-          }
-        });
-        
-        setNotes(fileTree);
+      const response = await fetch('/api/notes');
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.message || 'Failed to fetch notes.');
       }
-    } catch (error) {
-      console.error('Error loading notes:', error);
+      const fileTree = await response.json();
+      setNotes(fileTree);
+      setError(null);
+    } catch (err) {
+      console.error('Error loading notes:', err);
+      setError(err.message);
+      setNotes({});
     }
-  };
-
-  const saveSettings = () => {
-    localStorage.setItem('github_token', githubToken);
-    localStorage.setItem('github_repo', githubRepo);
-    localStorage.setItem('github_owner', githubOwner);
-    setIsConnected(true);
-    setShowSettings(false);
-    loadNotesFromGithub(githubToken, githubOwner, githubRepo);
   };
 
   const loadNote = async (notePath) => {
     try {
-      const response = await fetch(`https://api.github.com/repos/${githubOwner}/${githubRepo}/contents/${notePath}`, {
-        headers: {
-          'Authorization': `token ${githubToken}`,
-          'Accept': 'application/vnd.github.v3+json'
-        }
-      });
-      
-      if (response.ok) {
-        const data = await response.json();
-        const decodedContent = atob(data.content);
-        setCurrentNote({ path: notePath, sha: data.sha });
-        setTitle(notePath.split('/').pop().replace('.md', ''));
-        setContent(decodedContent);
-        setViewMode('edit');
+      const response = await fetch(`/api/notes?path=${encodeURIComponent(notePath)}`);
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.message || 'Failed to load note.');
       }
-    } catch (error) {
-      console.error('Error loading note:', error);
+      const data = await response.json();
+      setCurrentNote({ path: notePath, sha: data.sha });
+      setTitle(notePath.split('/').pop().replace('.md', ''));
+      setContent(data.content);
+      setViewMode('edit');
+    } catch (err) {
+      console.error('Error loading note:', err);
+      alert(`Error loading note: ${err.message}`);
     }
   };
 
   const saveNote = async () => {
-    if (!title || !isConnected) return;
+    if (!title) return;
 
     try {
       const path = currentNote?.path || `${title}.md`;
-      const encodedContent = btoa(content);
       
-      const body = {
-        message: `Update ${title}`,
-        content: encodedContent,
-      };
-
-      if (currentNote?.sha) {
-        body.sha = currentNote.sha;
-      }
-
-      const response = await fetch(`https://api.github.com/repos/${githubOwner}/${githubRepo}/contents/${path}`, {
+      const response = await fetch(`/api/notes?path=${encodeURIComponent(path)}`, {
         method: 'PUT',
-        headers: {
-          'Authorization': `token ${githubToken}`,
-          'Content-Type': 'application/json',
-          'Accept': 'application/vnd.github.v3+json'
-        },
-        body: JSON.stringify(body)
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          content: content,
+          sha: currentNote?.sha // This can be null for new files
+        })
       });
 
-      if (response.ok) {
-        const data = await response.json();
-        setCurrentNote({ path: path, sha: data.content.sha });
-        loadNotesFromGithub(githubToken, githubOwner, githubRepo);
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.message || 'Failed to save note.');
       }
-    } catch (error) {
-      console.error('Error saving note:', error);
+
+      const data = await response.json();
+      // Update the note's sha after saving
+      setCurrentNote(prev => ({ ...prev, path: path, sha: data.sha }));
+      
+      // Refresh the file tree to show new files
+      if (!currentNote?.path) {
+        loadNotes();
+      }
+    } catch (err) {
+      console.error('Error saving note:', err);
+      alert(`Error saving note: ${err.message}`);
     }
   };
 
@@ -279,131 +230,6 @@ export default function ObsidianClone() {
     });
   };
 
-  if (showSettings) {
-    return (
-      <div style={{
-        height: '100vh',
-        background: '#202020',
-        color: '#d1d5db',
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        padding: '24px'
-      }}>
-        <div style={{
-          width: '100%',
-          maxWidth: '400px',
-          background: '#1a1a1a',
-          borderRadius: '8px',
-          border: '1px solid #2a2a2a',
-          padding: '32px'
-        }}>
-          <h2 style={{ fontSize: '18px', fontWeight: '500', marginBottom: '24px', color: '#e5e7eb', textAlign: 'center' }}>GitHub Settings</h2>
-          
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-            <div>
-              <label style={{ display: 'block', fontSize: '12px', color: '#9ca3af', marginBottom: '6px' }}>GitHub Username</label>
-              <input
-                type="text"
-                value={githubOwner}
-                onChange={(e) => setGithubOwner(e.target.value)}
-                style={{
-                  width: '100%',
-                  background: '#0d0d0d',
-                  border: '1px solid #2a2a2a',
-                  borderRadius: '4px',
-                  padding: '10px 12px',
-                  fontSize: '14px',
-                  color: '#d1d5db',
-                  outline: 'none',
-                  boxSizing: 'border-box'
-                }}
-                placeholder="your-username"
-              />
-            </div>
-            
-            <div>
-              <label style={{ display: 'block', fontSize: '12px', color: '#9ca3af', marginBottom: '6px' }}>Repository Name</label>
-              <input
-                type="text"
-                value={githubRepo}
-                onChange={(e) => setGithubRepo(e.target.value)}
-                style={{
-                  width: '100%',
-                  background: '#0d0d0d',
-                  border: '1px solid #2a2a2a',
-                  borderRadius: '4px',
-                  padding: '10px 12px',
-                  fontSize: '14px',
-                  color: '#d1d5db',
-                  outline: 'none',
-                  boxSizing: 'border-box'
-                }}
-                placeholder="my-notes"
-              />
-            </div>
-            
-            <div>
-              <label style={{ display: 'block', fontSize: '12px', color: '#9ca3af', marginBottom: '6px' }}>Personal Access Token</label>
-              <input
-                type="password"
-                value={githubToken}
-                onChange={(e) => setGithubToken(e.target.value)}
-                style={{
-                  width: '100%',
-                  background: '#0d0d0d',
-                  border: '1px solid #2a2a2a',
-                  borderRadius: '4px',
-                  padding: '10px 12px',
-                  fontSize: '14px',
-                  color: '#d1d5db',
-                  outline: 'none',
-                  boxSizing: 'border-box'
-                }}
-                placeholder="ghp_xxxxxxxxxxxx"
-              />
-              <p style={{ fontSize: '12px', color: '#6b7280', marginTop: '8px', margin: '8px 0 0' }}>
-                Generate at: GitHub Settings → Developer settings → Tokens (classic) → repo scope
-              </p>
-            </div>
-            
-            <div style={{ display: 'flex', gap: '12px', paddingTop: '8px' }}>
-              <button
-                onClick={saveSettings}
-                style={{
-                  flex: 1,
-                  background: '#7c3aed',
-                  color: 'white',
-                  padding: '10px',
-                  borderRadius: '4px',
-                  border: 'none',
-                  fontSize: '14px',
-                  cursor: 'pointer'
-                }}
-              >
-                Connect
-              </button>
-              <button
-                onClick={() => setShowSettings(false)}
-                style={{
-                  padding: '10px 20px',
-                  background: '#2a2a2a',
-                  color: '#9ca3af',
-                  borderRadius: '4px',
-                  border: 'none',
-                  fontSize: '14px',
-                  cursor: 'pointer'
-                }}
-              >
-                Cancel
-              </button>
-            </div>
-          </div>
-        </div>
-      </div>
-    );
-  }
-
   return (
     <div style={{ height: '100vh', display: 'flex', background: '#202020' }}>
       <style>{`
@@ -453,9 +279,6 @@ export default function ObsidianClone() {
             <button onClick={createNewNote} className="icon-btn" title="New note">
               <Plus size={15} />
             </button>
-            <button onClick={() => setShowSettings(true)} className="icon-btn" title="Settings">
-              <Settings size={15} />
-            </button>
           </div>
         </div>
         
@@ -482,9 +305,13 @@ export default function ObsidianClone() {
         </div>
         
         <div style={{ flex: 1, overflow: 'auto', padding: '0 8px 8px' }}>
-          {Object.keys(notes).length === 0 ? (
+          {error ? (
+            <div style={{ fontSize: '12px', color: '#fca5a5', textAlign: 'center', marginTop: '32px', padding: '0 16px' }}>
+              Error: {error}
+            </div>
+          ) : Object.keys(notes).length === 0 ? (
             <div style={{ fontSize: '12px', color: '#6b7280', textAlign: 'center', marginTop: '32px', padding: '0 16px' }}>
-              {isConnected ? 'No notes found' : 'Configure GitHub to start'}
+              Loading notes...
             </div>
           ) : (
             renderFileTree(notes)
@@ -573,15 +400,14 @@ export default function ObsidianClone() {
           
           <button
             onClick={saveNote}
-            disabled={!isConnected}
             style={{
               padding: '4px 12px',
-              background: isConnected ? '#2a2a2a' : '#1a1a1a',
-              color: isConnected ? '#9ca3af' : '#6b7280',
+              background: '#2a2a2a',
+              color: '#9ca3af',
               border: 'none',
               borderRadius: '4px',
               fontSize: '12px',
-              cursor: isConnected ? 'pointer' : 'not-allowed'
+              cursor: 'pointer'
             }}
           >
             Save
@@ -670,7 +496,7 @@ export default function ObsidianClone() {
                 ref={textareaRef}
                 value={content}
                 onChange={(e) => setContent(e.target.value)}
-                placeholder={isConnected ? "Start typing..." : "Configure GitHub in settings..."}
+                placeholder="Start typing..."
                 style={{
                   width: '100%',
                   background: 'transparent',
