@@ -17,26 +17,15 @@ async function getNoteTree(res) {
   });
 
   if (!response.ok) {
-    throw new Error(`GitHub API Error: ${response.statusText}`);
+    // Pass the error response body to the frontend for inspection
+    const errorData = await response.json();
+    res.status(response.status).json(errorData);
+    return;
   }
 
   const data = await response.json();
-  const fileTree = {};
-  data.tree.forEach(item => {
-    if (item.type === 'blob' && item.path.endsWith('.md')) {
-      const parts = item.path.split('/');
-      let current = fileTree;
-      for (let i = 0; i < parts.length - 1; i++) {
-        if (!current[parts[i]]) {
-          current[parts[i]] = { type: 'folder', children: {} };
-        }
-        current = current[parts[i]].children;
-      }
-      const fileName = parts[parts.length - 1].replace('.md', '');
-      current[fileName] = { type: 'file', path: item.path, sha: item.sha };
-    }
-  });
-  res.status(200).json(fileTree);
+  // --- DEBUG: SEND RAW GITHUB API RESPONSE ---
+  res.status(200).json(data);
 }
 
 /**
@@ -89,6 +78,8 @@ async function putNote(req, res, path) {
 
 
 export default async function handler(req, res) {
+  console.log(`[${new Date().toISOString()}] /api/notes invoked. Method: ${req.method}, Path: ${req.query.path || 'none'}`);
+
   // Check for server configuration first
   if (!GITHUB_OWNER || !GITHUB_REPO || !GITHUB_TOKEN) {
     return res.status(500).json({ message: 'Server configuration error: Missing GitHub environment variables.' });
@@ -114,6 +105,10 @@ export default async function handler(req, res) {
     }
   } catch (error) {
     console.error('API Error:', error);
-    res.status(500).json({ message: error.message || 'An internal server error occurred.' });
+    res.status(500).json({ 
+      message: error.message || 'An internal server error occurred.',
+      name: error.name,
+      env_check: `GITHUB_OWNER: ${GITHUB_OWNER ? 'Set' : 'Not Set'}, GITHUB_REPO: ${GITHUB_REPO ? 'Set' : 'Not Set'}, GITHUB_TOKEN: ${GITHUB_TOKEN ? 'Set (first 8 chars: ' + GITHUB_TOKEN.substring(0, 8) + '...)' : 'Not Set'}`
+    });
   }
 }

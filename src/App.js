@@ -20,16 +20,19 @@ export default function ObsidianClone() {
   const loadNotes = async () => {
     try {
       const response = await fetch('/api/notes');
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.message || 'Failed to fetch notes.');
+      const data = await response.json();
+      
+      // --- DEBUG: ALWAYS DISPLAY THE RAW API RESPONSE ---
+      setError(JSON.stringify(data, null, 2));
+
+      if (response.ok) {
+        // We are in debug mode, so we don't process the notes yet.
+        // The raw response is shown in the debug view.
+        setNotes({}); // Keep notes empty to show the debug view
       }
-      const fileTree = await response.json();
-      setNotes(fileTree);
-      setError(null);
     } catch (err) {
       console.error('Error loading notes:', err);
-      setError(err.message);
+      setError(JSON.stringify(err, null, 2)); 
       setNotes({});
     }
   };
@@ -306,9 +309,20 @@ export default function ObsidianClone() {
         
         <div style={{ flex: 1, overflow: 'auto', padding: '0 8px 8px' }}>
           {error ? (
-            <div style={{ fontSize: '12px', color: '#fca5a5', textAlign: 'center', marginTop: '32px', padding: '0 16px' }}>
-              Error: {error}
-            </div>
+            <pre style={{ 
+              fontSize: '11px', 
+              color: '#ef4444',
+              background: '#fef2f2',
+              padding: '12px',
+              borderRadius: '4px',
+              border: '1px solid #fca5a5',
+              margin: '16px',
+              whiteSpace: 'pre-wrap',
+              wordBreak: 'break-all'
+            }}>
+              <strong>Debug Info:</strong><br />
+              {error}
+            </pre>
           ) : Object.keys(notes).length === 0 ? (
             <div style={{ fontSize: '12px', color: '#6b7280', textAlign: 'center', marginTop: '32px', padding: '0 16px' }}>
               Loading notes...
