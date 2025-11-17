@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { FileText, Plus, Folder, FolderOpen, ChevronRight, ChevronDown, Search, Menu, Bold, Italic, List, ListOrdered, CheckSquare, Highlighter, Share2, Eye, Edit } from 'lucide-react';
+import GraphView from './GraphView';
 
 export default function ObsidianClone() {
   const [notes, setNotes] = useState({});
@@ -108,16 +109,16 @@ export default function ObsidianClone() {
   const renderMarkdown = (text) => {
     let html = text;
     
-    html = html.replace(/^### (.+)$/gm, '<h3 style="color: #e5e7eb; font-size: 20px; font-weight: 600; margin: 16px 0 8px;">$1</h3>');
-    html = html.replace(/^## (.+)$/gm, '<h2 style="color: #e5e7eb; font-size: 24px; font-weight: 600; margin: 20px 0 10px;">$1</h2>');
-    html = html.replace(/^# (.+)$/gm, '<h1 style="color: #e5e7eb; font-size: 32px; font-weight: 700; margin: 24px 0 12px;">$1</h1>');
-    html = html.replace(/\*\*(.+?)\*\*/g, '<strong style="color: #e5e7eb; font-weight: 700;">$1</strong>');
-    html = html.replace(/\*(.+?)\*/g, '<em style="color: #d1d5db; font-style: italic;">$1</em>');
-    html = html.replace(/==(.+?)==/g, '<mark style="background: #fbbf24; color: #1a1a1a; padding: 2px 4px; border-radius: 2px;">$1</mark>');
-    html = html.replace(/\[\[(.+?)\]\]/g, '<a href="#" style="color: #a78bfa; text-decoration: none; border-bottom: 1px solid #a78bfa;">$1</a>');
-    html = html.replace(/^- \[ \] (.+)$/gm, '<div style="margin: 4px 0;"><input type="checkbox" style="margin-right: 8px;" disabled /> <span style="color: #d1d5db;">$1</span></div>');
-    html = html.replace(/^- \[x\] (.+)$/gm, '<div style="margin: 4px 0;"><input type="checkbox" checked style="margin-right: 8px;" disabled /> <span style="color: #9ca3af; text-decoration: line-through;">$1</span></div>');
-    html = html.replace(/^- (.+)$/gm, '<div style="margin: 4px 0; padding-left: 20px;"><span style="color: #6b7280;">•</span> <span style="color: #d1d5db;">$1</span></div>');
+    html = html.replace(/^### (.+)$/gm, '<h3 style="color: #e5e7eb; font-size: 20px; font-weight: 600; margin: 16px 0 8px;"></h3>');
+    html = html.replace(/^## (.+)$/gm, '<h2 style="color: #e5e7eb; font-size: 24px; font-weight: 600; margin: 20px 0 10px;"></h2>');
+    html = html.replace(/^# (.+)$/gm, '<h1 style="color: #e5e7eb; font-size: 32px; font-weight: 700; margin: 24px 0 12px;"></h1>');
+    html = html.replace(/\*\*(.+?)\*\*/g, '<strong style="color: #e5e7eb; font-weight: 700;"></strong>');
+    html = html.replace(/\*(.+?)\*/g, '<em style="color: #d1d5db; font-style: italic;"></em>');
+    html = html.replace(/==(.+?)==/g, '<mark style="background: #fbbf24; color: #1a1a1a; padding: 2px 4px; border-radius: 2px;"></mark>');
+    html = html.replace(/\[\[(.+?)\]\]/g, '<a href="#" style="color: #a78bfa; text-decoration: none; border-bottom: 1px solid #a78bfa;"></a>');
+    html = html.replace(/^- \[ \] (.+)$/gm, '<div style="margin: 4px 0;"><input type="checkbox" style="margin-right: 8px;" disabled /> <span style="color: #d1d5db;"></span></div>');
+    html = html.replace(/^- \[x\] (.+)$/gm, '<div style="margin: 4px 0;"><input type="checkbox" checked style="margin-right: 8px;" disabled /> <span style="color: #9ca3af; text-decoration: line-through;"></span></div>');
+    html = html.replace(/^- (.+)$/gm, '<div style="margin: 4px 0; padding-left: 20px;"><span style="color: #6b7280;">•</span> <span style="color: #d1d5db;"></span></div>');
     
     let listCounter = 0;
     html = html.replace(/^\d+\. (.+)$/gm, (match, item) => {
@@ -130,49 +131,8 @@ export default function ObsidianClone() {
     return html;
   };
 
-  const getAllNoteNames = (tree, path = '', names = []) => {
-    Object.entries(tree).forEach(([name, item]) => {
-      const fullPath = path ? `${path}/${name}` : name;
-      if (item.type === 'file') {
-        names.push(name);
-      } else if (item.type === 'folder') {
-        getAllNoteNames(item.children, fullPath, names);
-      }
-    });
-    return names;
-  };
-
-  const renderGraph = () => {
-    const allNotes = getAllNoteNames(notes);
-    
-    return (
-      <div style={{ 
-        width: '100%', 
-        height: '100%', 
-        display: 'flex', 
-        alignItems: 'center', 
-        justifyContent: 'center',
-        background: '#1a1a1a'
-      }}>
-        <svg width="100%" height="100%" viewBox="0 0 800 600" style={{ maxWidth: '800px', maxHeight: '600px' }}>
-          {allNotes.slice(0, 20).map((note, i) => {
-            const angle = (i / Math.max(allNotes.length, 1)) * 2 * Math.PI;
-            const x = 400 + Math.cos(angle) * 200;
-            const y = 300 + Math.sin(angle) * 200;
-            
-            return (
-              <g key={i}>
-                <circle cx={x} cy={y} r="8" fill="#7c3aed" />
-                <text x={x + 12} y={y + 4} fill="#9ca3af" fontSize="12">{note}</text>
-                <line x1={x} y1={y} x2="400" y2="300" stroke="#374151" strokeWidth="1" opacity="0.3" />
-              </g>
-            );
-          })}
-          <circle cx="400" cy="300" r="12" fill="#a78bfa" />
-          <text x="420" y="305" fill="#e5e7eb" fontSize="14" fontWeight="600">Your Notes</text>
-        </svg>
-      </div>
-    );
+  const handleGraphNodeClick = (nodeId) => {
+    loadNote(nodeId);
   };
 
   const renderFileTree = (tree, path = '') => {
@@ -447,7 +407,7 @@ export default function ObsidianClone() {
 
         <div style={{ flex: 1, overflow: 'auto' }}>
           {viewMode === 'graph' ? (
-            renderGraph()
+            <GraphView onNodeClick={handleGraphNodeClick} />
           ) : viewMode === 'preview' ? (
             <div style={{ maxWidth: '48rem', margin: '0 auto', padding: '48px 64px' }}>
               <h1 style={{ fontSize: '32px', fontWeight: 'bold', marginBottom: '32px', color: '#e5e7eb' }}>
