@@ -9,6 +9,41 @@ const getNoteApiUrl = (path) => `https://api.github.com/repos/${GITHUB_OWNER}/${
 const getTreeApiUrl = () => `https://api.github.com/repos/${GITHUB_OWNER}/${GITHUB_REPO}/git/trees/main?recursive=1`;
 
 /**
+ * Processes the flat file list from GitHub API into a hierarchical tree.
+ */
+function buildFileTree(tree) {
+  const fileTree = {};
+  const mdFilePaths = tree.filter(node => node.path.endsWith('.md'));
+
+  for (const node of mdFilePaths) {
+    const pathParts = node.path.split('/');
+    let currentLevel = fileTree;
+
+    for (let i = 0; i < pathParts.length; i++) {
+      const part = pathParts[i];
+      const isLastPart = i === pathParts.length - 1;
+
+      if (isLastPart) {
+        currentLevel[part] = {
+          type: 'file',
+          path: node.path,
+        };
+      } else {
+        if (!currentLevel[part]) {
+          currentLevel[part] = {
+            type: 'folder',
+            children: {},
+          };
+        }
+        currentLevel = currentLevel[part].children;
+      }
+    }
+  }
+  return fileTree;
+}
+
+
+/**
  * Fetches the entire note tree structure from GitHub.
  */
 async function getNoteTree(res) {
@@ -24,8 +59,8 @@ async function getNoteTree(res) {
   }
 
   const data = await response.json();
-  // --- DEBUG: SEND RAW GITHUB API RESPONSE ---
-  res.status(200).json(data);
+  const fileTree = buildFileTree(data.tree);
+  res.status(200).json(fileTree);
 }
 
 /**
