@@ -10,7 +10,6 @@ export default function ObsidianClone() {
   const [searchQuery, setSearchQuery] = useState('');
   const [expandedFolders, setExpandedFolders] = useState({});
   const [viewMode, setViewMode] = useState('edit');
-  const [error, setError] = useState(null);
   const textareaRef = useRef(null);
 
   useEffect(() => {
@@ -18,23 +17,9 @@ export default function ObsidianClone() {
   }, []);
 
   const loadNotes = async () => {
-    try {
-      const response = await fetch('/api/notes');
-      const data = await response.json();
-      
-      // --- DEBUG: ALWAYS DISPLAY THE RAW API RESPONSE ---
-      setError(JSON.stringify(data, null, 2));
-
-      if (response.ok) {
-        // We are in debug mode, so we don't process the notes yet.
-        // The raw response is shown in the debug view.
-        setNotes({}); // Keep notes empty to show the debug view
-      }
-    } catch (err) {
-      console.error('Error loading notes:', err);
-      setError(JSON.stringify(err, null, 2)); 
-      setNotes({});
-    }
+    const response = await fetch('/api/notes');
+    const fileTree = await response.json();
+    setNotes(fileTree);
   };
 
   const loadNote = async (notePath) => {
@@ -308,22 +293,7 @@ export default function ObsidianClone() {
         </div>
         
         <div style={{ flex: 1, overflow: 'auto', padding: '0 8px 8px' }}>
-          {error ? (
-            <pre style={{ 
-              fontSize: '11px', 
-              color: '#ef4444',
-              background: '#fef2f2',
-              padding: '12px',
-              borderRadius: '4px',
-              border: '1px solid #fca5a5',
-              margin: '16px',
-              whiteSpace: 'pre-wrap',
-              wordBreak: 'break-all'
-            }}>
-              <strong>Debug Info:</strong><br />
-              {error}
-            </pre>
-          ) : Object.keys(notes).length === 0 ? (
+          {Object.keys(notes).length === 0 ? (
             <div style={{ fontSize: '12px', color: '#6b7280', textAlign: 'center', marginTop: '32px', padding: '0 16px' }}>
               Loading notes...
             </div>
