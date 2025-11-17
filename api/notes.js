@@ -104,7 +104,8 @@ async function putNote(req, res, path) {
   });
 
   if (!response.ok) {
-    throw new Error(`GitHub API Error: ${response.statusText}`);
+    const errorData = await response.json();
+    throw new Error(`GitHub API Error: ${response.statusText} - ${JSON.stringify(errorData)}`);
   }
 
   const data = await response.json();
