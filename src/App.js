@@ -41,7 +41,7 @@ export default function ObsidianClone() {
       setTitle(notePath.split('/').pop().replace('.md', ''));
       setContent(data.content);
       setOriginalContent(data.content);
-      setViewMode('edit');
+      setViewMode('preview');
     } catch (err) {
       console.error('Error loading note:', err);
       alert(`Error loading note: ${err.message}`);
