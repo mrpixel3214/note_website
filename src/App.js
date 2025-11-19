@@ -124,7 +124,7 @@ export default function ObsidianClone() {
     html = html.replace(/\*\*(.+?)\*\*/g, '<strong style="color: #e5e7eb; font-weight: 700;">$1</strong>');
     html = html.replace(/\*(.+?)\*/g, '<em style="color: #d1d5db; font-style: italic;">$1</em>');
     html = html.replace(/==(.+?)==/g, '<mark style="background: #fbbf24; color: #1a1a1a; padding: 2px 4px; border-radius: 2px;">$1</mark>');
-    html = html.replace(/\[\[(.+?)\]\]/g, '<a href="#" style="color: #a78bfa; text-decoration: none; border-bottom: 1px solid #a78bfa;">$1</a>');
+    html = html.replace(/\[\[(.+?)\]\]/g, '<a href="#" data-wikilink="$1" style="color: #a78bfa; text-decoration: none; border-bottom: 1px solid #a78bfa;">$1</a>');
     html = html.replace(/^- \[ \] (.+)$/gm, '<div style="margin: 4px 0;"><input type="checkbox" style="margin-right: 8px;" disabled /> <span style="color: #d1d5db;">$1</span></div>');
     html = html.replace(/^- \[x\] (.+)$/gm, '<div style="margin: 4px 0;"><input type="checkbox" checked style="margin-right: 8px;" disabled /> <span style="color: #9ca3af; text-decoration: line-through;">$1</span></div>');
     html = html.replace(/^- (.+)$/gm, '<div style="margin: 4px 0; padding-left: 20px;"><span style="color: #6b7280;">•</span> <span style="color: #d1d5db;">$1</span></div>');
@@ -142,6 +142,17 @@ export default function ObsidianClone() {
 
   const handleGraphNodeClick = (nodeId) => {
     loadNote(nodeId);
+  };
+
+  const handleWikiLinkClick = (e) => {
+    const link = e.target.closest('a[data-wikilink]');
+    if (link) {
+      e.preventDefault();
+      const notePath = link.getAttribute('data-wikilink');
+      if (notePath) {
+        loadNote(`${notePath}.md`);
+      }
+    }
   };
 
   const renderFileTree = (tree, path = '') => {
@@ -427,6 +438,7 @@ export default function ObsidianClone() {
               <div
                 style={{ lineHeight: '1.6', fontSize: '15px', color: '#d1d5db' }}
                 dangerouslySetInnerHTML={{ __html: renderMarkdown(content) }}
+                onClick={handleWikiLinkClick}
               />
             </div>
           ) : (
