@@ -19,6 +19,19 @@ The following features were implemented with the assistance of the Gemini CLI:
     *   **Graph View Component (`src/GraphView.js`):** Created a dedicated React component responsible for fetching the graph data from the backend and rendering it using `react-force-graph-2d`. This component includes custom node rendering to display note titles and handles node clicks to load the associated note.
     *   **Integration into Main Application (`src/App.js`):** Replaced the previous placeholder graph rendering logic with the new `GraphView` component. Implemented a `handleGraphNodeClick` function to allow users to navigate to a note by clicking its representation in the graph.
 
+## Recent Enhancements
+
+*   **Delete Note Functionality:** You can now delete notes directly from the file tree. A confirmation prompt has been added to prevent accidental deletions.
+*   **Clickable Wikilinks:** Inspired by Obsidian, `[[wikilinks]]` in the preview mode are now clickable, allowing for seamless navigation between notes.
+*   **Save Button State:** The "Save" button now provides clear visual feedback, turning blue when there are unsaved changes and remaining disabled when there are no changes to save.
+*   **Graph View Enhancements:**
+    *   The graph view now correctly displays the connections (links) between notes.
+    *   The color of the note titles has been adjusted for better readability against the dark background.
+*   **Improved UX:**
+    *   Notes now open in "preview" mode by default for a cleaner reading experience.
+    *   The preview mode now has more legible text colors.
+    *   The "New Note" button is fully functional, allowing for the creation of new notes.
+
 ## Setup and Running the Application
 
 1.  **Environment Variables:**
