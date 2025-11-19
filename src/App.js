@@ -6,6 +6,8 @@ export default function ObsidianClone() {
   const [notes, setNotes] = useState({});
   const [currentNote, setCurrentNote] = useState(null);
   const [content, setContent] = useState('');
+  const [originalContent, setOriginalContent] = useState('');
+  const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
   const [title, setTitle] = useState('Untitled');
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
@@ -16,6 +18,10 @@ export default function ObsidianClone() {
   useEffect(() => {
     loadNotes();
   }, []);
+
+  useEffect(() => {
+    setHasUnsavedChanges(content !== originalContent || title !== (currentNote?.path.split('/').pop().replace('.md', '') || 'Untitled'));
+  }, [content, originalContent, title, currentNote]);
 
   const loadNotes = async () => {
     const response = await fetch('/api/notes');
@@ -34,6 +40,7 @@ export default function ObsidianClone() {
       setCurrentNote({ path: notePath, sha: data.sha });
       setTitle(notePath.split('/').pop().replace('.md', ''));
       setContent(data.content);
+      setOriginalContent(data.content);
       setViewMode('edit');
     } catch (err) {
       console.error('Error loading note:', err);
@@ -64,6 +71,7 @@ export default function ObsidianClone() {
       const data = await response.json();
       // Update the note's sha after saving
       setCurrentNote(prev => ({ ...prev, path: path, sha: data.sha }));
+      setOriginalContent(content);
       
       // Refresh the file tree to show new files
       if (!currentNote?.path) {
@@ -79,6 +87,7 @@ export default function ObsidianClone() {
     setCurrentNote(null);
     setTitle('Untitled');
     setContent('');
+    setOriginalContent('');
     setViewMode('edit');
   };
 
@@ -109,16 +118,16 @@ export default function ObsidianClone() {
   const renderMarkdown = (text) => {
     let html = text;
     
-    html = html.replace(/^### (.+)$/gm, '<h3 style="color: #e5e7eb; font-size: 20px; font-weight: 600; margin: 16px 0 8px;"></h3>');
-    html = html.replace(/^## (.+)$/gm, '<h2 style="color: #e5e7eb; font-size: 24px; font-weight: 600; margin: 20px 0 10px;"></h2>');
-    html = html.replace(/^# (.+)$/gm, '<h1 style="color: #e5e7eb; font-size: 32px; font-weight: 700; margin: 24px 0 12px;"></h1>');
-    html = html.replace(/\*\*(.+?)\*\*/g, '<strong style="color: #e5e7eb; font-weight: 700;"></strong>');
-    html = html.replace(/\*(.+?)\*/g, '<em style="color: #d1d5db; font-style: italic;"></em>');
-    html = html.replace(/==(.+?)==/g, '<mark style="background: #fbbf24; color: #1a1a1a; padding: 2px 4px; border-radius: 2px;"></mark>');
-    html = html.replace(/\[\[(.+?)\]\]/g, '<a href="#" style="color: #a78bfa; text-decoration: none; border-bottom: 1px solid #a78bfa;"></a>');
-    html = html.replace(/^- \[ \] (.+)$/gm, '<div style="margin: 4px 0;"><input type="checkbox" style="margin-right: 8px;" disabled /> <span style="color: #d1d5db;"></span></div>');
-    html = html.replace(/^- \[x\] (.+)$/gm, '<div style="margin: 4px 0;"><input type="checkbox" checked style="margin-right: 8px;" disabled /> <span style="color: #9ca3af; text-decoration: line-through;"></span></div>');
-    html = html.replace(/^- (.+)$/gm, '<div style="margin: 4px 0; padding-left: 20px;"><span style="color: #6b7280;">•</span> <span style="color: #d1d5db;"></span></div>');
+    html = html.replace(/^### (.+)$/gm, '<h3 style="color: #e5e7eb; font-size: 20px; font-weight: 600; margin: 16px 0 8px;">$1</h3>');
+    html = html.replace(/^## (.+)$/gm, '<h2 style="color: #e5e7eb; font-size: 24px; font-weight: 600; margin: 20px 0 10px;">$1</h2>');
+    html = html.replace(/^# (.+)$/gm, '<h1 style="color: #e5e7eb; font-size: 32px; font-weight: 700; margin: 24px 0 12px;">$1</h1>');
+    html = html.replace(/\*\*(.+?)\*\*/g, '<strong style="color: #e5e7eb; font-weight: 700;">$1</strong>');
+    html = html.replace(/\*(.+?)\*/g, '<em style="color: #d1d5db; font-style: italic;">$1</em>');
+    html = html.replace(/==(.+?)==/g, '<mark style="background: #fbbf24; color: #1a1a1a; padding: 2px 4px; border-radius: 2px;">$1</mark>');
+    html = html.replace(/\[\[(.+?)\]\]/g, '<a href="#" style="color: #a78bfa; text-decoration: none; border-bottom: 1px solid #a78bfa;">$1</a>');
+    html = html.replace(/^- \[ \] (.+)$/gm, '<div style="margin: 4px 0;"><input type="checkbox" style="margin-right: 8px;" disabled /> <span style="color: #d1d5db;">$1</span></div>');
+    html = html.replace(/^- \[x\] (.+)$/gm, '<div style="margin: 4px 0;"><input type="checkbox" checked style="margin-right: 8px;" disabled /> <span style="color: #9ca3af; text-decoration: line-through;">$1</span></div>');
+    html = html.replace(/^- (.+)$/gm, '<div style="margin: 4px 0; padding-left: 20px;"><span style="color: #6b7280;">•</span> <span style="color: #d1d5db;">$1</span></div>');
     
     let listCounter = 0;
     html = html.replace(/^\d+\. (.+)$/gm, (match, item) => {
@@ -344,14 +353,16 @@ export default function ObsidianClone() {
           
           <button
             onClick={saveNote}
+            disabled={!hasUnsavedChanges}
             style={{
               padding: '4px 12px',
-              background: '#2a2a2a',
-              color: '#9ca3af',
+              background: hasUnsavedChanges ? '#3b82f6' : '#2a2a2a',
+              color: hasUnsavedChanges ? 'white' : '#9ca3af',
               border: 'none',
               borderRadius: '4px',
               fontSize: '12px',
-              cursor: 'pointer'
+              cursor: hasUnsavedChanges ? 'pointer' : 'not-allowed',
+              opacity: hasUnsavedChanges ? 1 : 0.5
             }}
           >
             Save
@@ -414,7 +425,7 @@ export default function ObsidianClone() {
                 {title}
               </h1>
               <div
-                style={{ lineHeight: '1.6', fontSize: '15px' }}
+                style={{ lineHeight: '1.6', fontSize: '15px', color: '#d1d5db' }}
                 dangerouslySetInnerHTML={{ __html: renderMarkdown(content) }}
               />
             </div>

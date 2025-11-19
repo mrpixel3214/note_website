@@ -17,7 +17,10 @@ export default function GraphView({ onNodeClick }) {
           throw new Error('Failed to fetch graph data.');
         }
         const data = await response.json();
-        setGraphData(data);
+        setGraphData({
+          nodes: [...data.nodes],
+          links: [...data.links],
+        });
       } catch (err) {
         setError(err.message);
       } finally {
