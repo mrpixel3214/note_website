@@ -91,7 +91,7 @@ async function putNote(req, res, path) {
   const body = {
     message: `Update ${path}`,
     content: Buffer.from(content).toString('base64'),
-    sha: sha // sha is required for updates
+    sha: sha, // sha is required for updates
   };
 
   const response = await fetch(getNoteApiUrl(path), {
@@ -100,17 +100,65 @@ async function putNote(req, res, path) {
       'Authorization': `token ${GITHUB_TOKEN}`,
       'Content-Type': 'application/json',
     },
-    body: JSON.stringify(body)
+    body: JSON.stringify(body),
   });
 
   if (!response.ok) {
     const errorData = await response.json();
-    throw new Error(`GitHub API Error: ${response.statusText} - ${JSON.stringify(errorData)}`);
+    throw new Error(
+      `GitHub API Error: ${response.statusText} - ${JSON.stringify(
+        errorData
+      )}`
+    );
   }
 
   const data = await response.json();
   res.status(200).json({ sha: data.content.sha });
 }
+
+async function deleteNote(req, res, path) {
+  // First, get the SHA of the file
+  const getResponse = await fetch(getNoteApiUrl(path), {
+    headers: { Authorization: `token ${GITHUB_TOKEN}` },
+  });
+
+  if (!getResponse.ok) {
+    const errorData = await getResponse.json();
+    throw new Error(
+      `GitHub API Error (getting SHA): ${
+        getResponse.statusText
+      } - ${JSON.stringify(errorData)}`
+    );
+  }
+  const data = await getResponse.json();
+  const sha = data.sha;
+
+  const body = {
+    message: `Delete ${path}`,
+    sha: sha,
+  };
+
+  const response = await fetch(getNoteApiUrl(path), {
+    method: 'DELETE',
+    headers: {
+      'Authorization': `token ${GITHUB_TOKEN}`,
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify(body),
+  });
+
+  if (!response.ok) {
+    const errorData = await response.json();
+    throw new Error(
+      `GitHub API Error (deleting file): ${
+        response.statusText
+      } - ${JSON.stringify(errorData)}`
+    );
+  }
+
+  res.status(200).json({ message: 'Note deleted successfully.' });
+}
+
 
 
 /**
@@ -207,6 +255,12 @@ export default async function handler(req, res) {
         await putNote(req, res, path);
       } else {
         res.status(400).json({ message: 'Bad Request: Missing path for PUT.' });
+      }
+    } else if (req.method === 'DELETE') {
+      if (path) {
+        await deleteNote(req, res, path);
+      } else {
+        res.status(400).json({ message: 'Bad Request: Missing path for DELETE.' });
       }
     } else {
       res.status(405).json({ message: 'Method Not Allowed' });

@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { FileText, Plus, Folder, FolderOpen, ChevronRight, ChevronDown, Search, Menu, Bold, Italic, List, ListOrdered, CheckSquare, Highlighter, Share2, Eye, Edit } from 'lucide-react';
+import { FileText, Plus, Folder, FolderOpen, ChevronRight, ChevronDown, Search, Menu, Bold, Italic, List, ListOrdered, CheckSquare, Highlighter, Share2, Eye, Edit, Trash2 } from 'lucide-react';
 import GraphView from './GraphView';
 
 export default function ObsidianClone() {
@@ -80,6 +80,29 @@ export default function ObsidianClone() {
     } catch (err) {
       console.error('Error saving note:', err);
       alert(`Error saving note: ${err.message}`);
+    }
+  };
+
+  const deleteNote = async (notePath) => {
+    if (window.confirm(`Are you sure you want to delete "${notePath}"?`)) {
+      try {
+        const response = await fetch(`/api/notes?path=${encodeURIComponent(notePath)}`, {
+          method: 'DELETE',
+        });
+        if (!response.ok) {
+          const errorData = await response.json();
+          throw new Error(errorData.message || 'Failed to delete note.');
+        }
+        // If the deleted note was the current one, clear the editor
+        if (currentNote?.path === notePath) {
+          createNewNote();
+        }
+        // Reload the notes tree
+        loadNotes();
+      } catch (err) {
+        console.error('Error deleting note:', err);
+        alert(`Error deleting note: ${err.message}`);
+      }
     }
   };
 
@@ -180,19 +203,37 @@ export default function ObsidianClone() {
         );
       } else {
         return (
-          <button
-            key={fullPath}
-            onClick={() => loadNote(item.path)}
-            className="file-btn"
-            style={{
-              marginLeft: '16px',
-              background: currentNote?.path === item.path ? '#2a2a2a' : 'transparent',
-              color: currentNote?.path === item.path ? '#a78bfa' : '#9ca3af'
-            }}
-          >
-            <FileText size={13} color="#6b7280" />
-            <span>{name}</span>
-          </button>
+          <div key={fullPath} className="file-entry" style={{ display: 'flex', alignItems: 'center', marginLeft: '16px' }}>
+            <button
+              onClick={() => loadNote(item.path)}
+              className="file-btn"
+              style={{
+                flex: 1,
+                background: currentNote?.path === item.path ? '#2a2a2a' : 'transparent',
+                color: currentNote?.path === item.path ? '#a78bfa' : '#9ca3af'
+              }}
+            >
+              <FileText size={13} color="#6b7280" />
+              <span style={{ flex: 1, textAlign: 'left' }}>{name}</span>
+            </button>
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                deleteNote(item.path);
+              }}
+              className="delete-btn"
+              style={{
+                background: 'transparent',
+                border: 'none',
+                cursor: 'pointer',
+                visibility: 'hidden',
+                color: '#9ca3af'
+              }}
+              title={`Delete ${name}`}
+            >
+              <Trash2 size={13} />
+            </button>
+          </div>
         );
       }
     });
@@ -223,6 +264,9 @@ export default function ObsidianClone() {
         }
         .icon-btn {
           padding: 4px;
+        }
+        .file-entry:hover .delete-btn {
+          visibility: visible;
         }
       `}</style>
 

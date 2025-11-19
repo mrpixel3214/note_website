@@ -17,10 +17,7 @@ export default function GraphView({ onNodeClick }) {
           throw new Error('Failed to fetch graph data.');
         }
         const data = await response.json();
-        setGraphData({
-          nodes: [...data.nodes],
-          links: [...data.links],
-        });
+        setGraphData(JSON.parse(JSON.stringify(data)));
       } catch (err) {
         setError(err.message);
       } finally {
@@ -73,7 +70,7 @@ export default function GraphView({ onNodeClick }) {
 
           ctx.textAlign = 'center';
           ctx.textBaseline = 'middle';
-          ctx.fillStyle = '#a78bfa';
+          ctx.fillStyle = '#d1d5db';
           ctx.fillText(label, node.x, node.y);
 
           node.__bckgDimensions = bckgDimensions; // to use in nodePointerAreaPaint
